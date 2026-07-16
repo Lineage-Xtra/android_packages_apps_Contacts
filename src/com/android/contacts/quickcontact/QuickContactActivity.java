@@ -2726,6 +2726,43 @@ public class QuickContactActivity extends ContactsActivity {
                         /* thirdPartyAction */ null);
                 toggleStar(item, isStarred);
             }
+        } else if (id == R.id.menu_set_calling_card || id == R.id.menu_view_calling_card) {
+            if (mContactData != null) {
+                String phoneNumber = null;
+                // Safely crawl raw content values loaded by ContactLoader to fetch a physical phone number mapping
+                for (RawContact rawContact : mContactData.getRawContacts()) {
+                    for (DataItem dataItem : rawContact.getDataItems()) {
+                        if (dataItem instanceof PhoneDataItem) {
+                            phoneNumber = ((PhoneDataItem) dataItem).getNumber();
+                            if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+                                break;
+                            }
+                        }
+                    }
+                    if (phoneNumber != null) break;
+                }
+
+                if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                    Toast.makeText(this, "No phone number available for this contact", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+
+                Intent intent = new Intent();
+                intent.setComponent(new android.content.ComponentName(
+                        "com.android.dialer",
+                        "com.android.dialer.callingcard.CallingCardEditorActivity"));
+
+                intent.putExtra("EXTRA_PHONE_NUMBER", phoneNumber.trim());
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                try {
+                    mHasIntentLaunched = true;
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(this, "Calling Card component not found or Dialer not installed.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            return true;
         } else if (id == R.id.menu_edit) {
             if (DirectoryContactUtil.isDirectoryContact(mContactData)) {
                 Logger.logQuickContactEvent(

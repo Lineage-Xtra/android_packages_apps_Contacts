@@ -34,6 +34,14 @@
         android:title="@string/menu_linkedContacts" />
 
     <item
+        android:id="@+id/menu_set_calling_card"
+        android:title="Set calling card" />
+
+    <item
+        android:id="@+id/menu_view_calling_card"
+        android:title="View calling card" />
+
+    <item
         android:id="@+id/menu_delete"
         android:title="@string/menu_deleteContact" />
 
