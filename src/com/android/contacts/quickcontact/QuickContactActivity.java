@@ -2756,6 +2756,8 @@ public class QuickContactActivity extends ContactsActivity {
 
                 if (id == R.id.menu_delete_calling_card) {
                     intent.putExtra("EXTRA_DELETE_CARD", true);
+                } else if (id == R.id.menu_view_calling_card) {
+                    intent.putExtra("EXTRA_VIEW_ONLY", true);
                 }
 
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
