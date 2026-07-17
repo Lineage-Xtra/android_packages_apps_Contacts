@@ -42,6 +42,10 @@
         android:title="View calling card" />
 
     <item
+        android:id="@+id/menu_delete_calling_card"
+        android:title="Delete calling card" />
+
+    <item
         android:id="@+id/menu_delete"
         android:title="@string/menu_deleteContact" />
 
