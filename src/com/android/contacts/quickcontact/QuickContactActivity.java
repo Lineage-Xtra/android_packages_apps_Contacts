@@ -2726,7 +2726,7 @@ public class QuickContactActivity extends ContactsActivity {
                         /* thirdPartyAction */ null);
                 toggleStar(item, isStarred);
             }
-        } else if (id == R.id.menu_set_calling_card || id == R.id.menu_view_calling_card) {
+        } else if (id == R.id.menu_set_calling_card || id == R.id.menu_view_calling_card || id == R.id.menu_delete_calling_card) {
             if (mContactData != null) {
                 String phoneNumber = null;
                 // Safely crawl raw content values loaded by ContactLoader to fetch a physical phone number mapping
@@ -2753,6 +2753,11 @@ public class QuickContactActivity extends ContactsActivity {
                         "com.android.dialer.callingcard.CallingCardEditorActivity"));
 
                 intent.putExtra("EXTRA_PHONE_NUMBER", phoneNumber.trim());
+
+                if (id == R.id.menu_delete_calling_card) {
+                    intent.putExtra("EXTRA_DELETE_CARD", true);
+                }
+
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
                 try {
