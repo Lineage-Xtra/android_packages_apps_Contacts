@@ -2632,6 +2632,21 @@ public class QuickContactActivity extends ContactsActivity {
         }
     }
 
+    private String getPrimaryPhoneNumber() {
+        if (mContactData == null) return null;
+        for (RawContact rawContact : mContactData.getRawContacts()) {
+            for (DataItem dataItem : rawContact.getDataItems()) {
+                if (dataItem instanceof PhoneDataItem) {
+                    String number = ((PhoneDataItem) dataItem).getNumber();
+                    if (number != null && !number.trim().isEmpty()) {
+                        return number.trim();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         final MenuInflater inflater = getMenuInflater();
@@ -2704,6 +2719,29 @@ public class QuickContactActivity extends ContactsActivity {
             final MenuItem helpMenu = menu.findItem(R.id.menu_help);
             helpMenu.setVisible(HelpUtils.isHelpAndFeedbackAvailable());
 
+            // Handle Calling Card menu states
+            MenuItem viewCardItem = menu.findItem(R.id.menu_view_calling_card);
+            MenuItem deleteCardItem = menu.findItem(R.id.menu_delete_calling_card);
+
+            if (viewCardItem != null || deleteCardItem != null) {
+                boolean hasCard = false;
+                String phoneNumber = getPrimaryPhoneNumber();
+
+                if (phoneNumber != null) {
+                    android.net.Uri queryUri = android.net.Uri.parse("content://com.android.dialer.callingcard/check/" + android.net.Uri.encode(phoneNumber));
+                    try (android.database.Cursor c = getContentResolver().query(queryUri, null, null, null, null)) {
+                        if (c != null && c.getCount() > 0) {
+                            hasCard = true;
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e(TAG, "Failed to query Dialer CallingCardProvider", e);
+                    }
+                }
+
+                if (viewCardItem != null) viewCardItem.setEnabled(hasCard);
+                if (deleteCardItem != null) deleteCardItem.setEnabled(hasCard);
+            }
+
             return true;
         }
         return false;
@@ -2727,48 +2765,33 @@ public class QuickContactActivity extends ContactsActivity {
                 toggleStar(item, isStarred);
             }
         } else if (id == R.id.menu_set_calling_card || id == R.id.menu_view_calling_card || id == R.id.menu_delete_calling_card) {
-            if (mContactData != null) {
-                String phoneNumber = null;
-                // Safely crawl raw content values loaded by ContactLoader to fetch a physical phone number mapping
-                for (RawContact rawContact : mContactData.getRawContacts()) {
-                    for (DataItem dataItem : rawContact.getDataItems()) {
-                        if (dataItem instanceof PhoneDataItem) {
-                            phoneNumber = ((PhoneDataItem) dataItem).getNumber();
-                            if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
-                                break;
-                            }
-                        }
-                    }
-                    if (phoneNumber != null) break;
-                }
+            String phoneNumber = getPrimaryPhoneNumber();
 
-                if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
-                    Toast.makeText(this, "No phone number available for this contact", Toast.LENGTH_SHORT).show();
-                    return true;
-                }
-
-                Intent intent = new Intent();
-                intent.setComponent(new android.content.ComponentName(
-                        "com.android.dialer",
-                        "com.android.dialer.callingcard.CallingCardEditorActivity"));
-
-                intent.putExtra("EXTRA_PHONE_NUMBER", phoneNumber.trim());
-
-                if (id == R.id.menu_delete_calling_card) {
-                    intent.putExtra("EXTRA_DELETE_CARD", true);
-                } else if (id == R.id.menu_view_calling_card) {
-                    intent.putExtra("EXTRA_VIEW_ONLY", true);
-                }
-
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                try {
-                    mHasIntentLaunched = true;
-                    startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    Toast.makeText(this, "Calling Card component not found or Dialer not installed.", Toast.LENGTH_SHORT).show();
-                }
+            if (phoneNumber == null) {
+                Toast.makeText(this, "No phone number available for this contact", Toast.LENGTH_SHORT).show();
+                return true;
             }
+
+            Intent intent = new Intent();
+            intent.setComponent(new android.content.ComponentName(
+                    "com.android.dialer",
+                    "com.android.dialer.callingcard.CallingCardEditorActivity"));
+
+            intent.putExtra("EXTRA_PHONE_NUMBER", phoneNumber);
+
+            if (id == R.id.menu_delete_calling_card) {
+                intent.putExtra("EXTRA_DELETE_CARD", true);
+            } else if (id == R.id.menu_view_calling_card) {
+                intent.putExtra("EXTRA_VIEW_ONLY", true);
+            }
+
+            try {
+                mHasIntentLaunched = true;
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(this, "Calling Card component not found or Dialer not installed.", Toast.LENGTH_SHORT).show();
+            }
+
             return true;
         } else if (id == R.id.menu_edit) {
             if (DirectoryContactUtil.isDirectoryContact(mContactData)) {
